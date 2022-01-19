@@ -1,12 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-
 module.exports = {
   improve: '@apostrophecms/login',
-  bundle: {
-    directory: 'modules',
-    modules: getBundleModuleNames()
-  },
   init(self) {
     self.apos.template.append('head', '@apostrophecms/login:recaptcha');
   },
@@ -31,7 +24,7 @@ module.exports = {
 
     return {
       add: {
-        AposReCaptcha: {
+        AposRecaptcha: {
           phase: 'beforeSubmit',
           async props(req) {
             return {
@@ -39,11 +32,11 @@ module.exports = {
             };
           },
           async verify(req) {
-            if (!req.body.requirements.AposReCaptcha) {
+            if (!req.body.requirements.AposRecaptcha) {
               throw self.apos.error('invalid', req.t('AposRecap:missingConfig'));
             }
 
-            await self.checkRecaptcha(req, req.body.requirements.AposReCaptcha);
+            await self.checkRecaptcha(req, req.body.requirements.AposRecaptcha);
           }
         }
       }
@@ -82,11 +75,3 @@ module.exports = {
     };
   }
 };
-
-function getBundleModuleNames() {
-  const source = path.join(__dirname, './modules/@apostrophecms');
-  return fs
-    .readdirSync(source, { withFileTypes: true })
-    .filter(dirent => dirent.isDirectory())
-    .map(dirent => `@apostrophecms/${dirent.name}`);
-}
