@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "npm run eslint",
     "eslint": "eslint .",
-    "test": "npm run lint"
+    "test": "npm run lint && mocha"
   },
   "repository": {
     "type": "git",
@@ -27,6 +27,6 @@
     "mocha": "^7.2.0"
   },
   "peerDependencies": {
-    "apostrophe": "^3.11.0"
+    "apostrophe": "^3.13.0"
   }
 }
