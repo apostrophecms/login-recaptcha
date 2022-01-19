@@ -120,9 +120,39 @@ describe('Forms module', function () {
     }
 
     // Make sure it really didn't work
-    page = await apos.http.get('/', { jar }
-    );
+    page = await apos.http.get('/', { jar });
 
     assert(page.match(/logged out/));
+  });
+
+  it('should log in with a recaptcha token', async function() {
+
+    const jar = apos.http.jar();
+
+    // establish session
+    let page = await apos.http.get('/', { jar });
+
+    assert(page.match(/logged out/));
+
+    await apos.http.post(
+      '/api/v1/@apostrophecms/login/login',
+      {
+        method: 'POST',
+        body: {
+          username: mary.username,
+          password: mary.pw,
+          session: true,
+          requirements: {
+            // The reCAPTCHA test keys accept any token value.
+            AposRecaptcha: 'valid-token'
+          }
+        },
+        jar
+      }
+    );
+
+    page = await apos.http.get('/', { jar });
+
+    assert(page.match(/logged in/));
   });
 });
