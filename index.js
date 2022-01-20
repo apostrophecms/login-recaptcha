@@ -1,17 +1,5 @@
 module.exports = {
   improve: '@apostrophecms/login',
-  init(self) {
-    self.apos.template.append('head', '@apostrophecms/login:recaptcha');
-  },
-  components(self) {
-    return {
-      recaptcha(req, data) {
-        return {
-          sitekey: self.options.recaptcha.site
-        };
-      }
-    };
-  },
   requirements(self) {
 
     if (!self.options.recaptcha.site || !self.options.recaptcha.secret) {
@@ -64,13 +52,6 @@ module.exports = {
           self.apos.util.error(e);
           throw self.apos.error('error', req.t('AposRecap:recaptchaErr'));
         }
-      }
-    };
-  },
-  helpers(self) {
-    return {
-      getLoginUrl() {
-        return self.login();
       }
     };
   }

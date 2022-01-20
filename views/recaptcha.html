@@ -1,9 +1,0 @@
-{% set isLoginPage = apos.util.contains(data.absoluteUrl, apos.login.getLoginUrl()) %}
-{% set recaptchaURL =
-  'https://www.google.com/recaptcha/api.js?render=' + data.sitekey
-%}
-
-{% if not data.user and isLoginPage %}
-{# Only load this script on the login page. #}
-<script data-recaptcha src="{{ recaptchaURL }}" nonce="{{ nonce }}" async defer ></script>
-{% endif %}

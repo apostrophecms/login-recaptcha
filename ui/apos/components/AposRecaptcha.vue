@@ -11,15 +11,17 @@ export default {
       token: null
     };
   },
+  computed: {
+    recaptchaUrl() {
+      return 'https://www.google.com/recaptcha/api.js?render=' + this.sitekey;
+    }
+  },
   mounted(){
-    const self = this;
-    grecaptcha.ready(() => {
-      // Uses the `.then` syntax to use the .ready() method.
-      grecaptcha.execute(this.sitekey, {action: 'submit'})
-      .then(function(token) {
-        self.token = token;
-      });
-    });
+    if (!window.grecaptcha) {
+      this.addScript();
+    }
+
+    this.executeRecaptcha();
   },
   watch: {
     token(newVal) {
@@ -28,6 +30,31 @@ export default {
       } else {
         this.$emit('block');
       }
+    }
+  },
+  methods: {
+    addScript() {
+      let scriptElem = document.createElement('script');
+      scriptElem.setAttribute('src', this.recaptchaUrl);
+      scriptElem.setAttribute('defer', true);
+
+      document.head.appendChild(scriptElem);
+    },
+    executeRecaptcha() {
+      if (!window.grecaptcha) {
+        setTimeout(this.executeRecaptcha, 100);
+        return;
+      }
+
+      const self = this;
+
+      grecaptcha.ready(() => {
+        // Uses the `.then` syntax to use the .ready() method.
+        grecaptcha.execute(this.sitekey, {action: 'submit'})
+        .then(function(token) {
+          self.token = token;
+        });
+      });
     }
   }
 };
