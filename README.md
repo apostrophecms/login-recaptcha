@@ -60,7 +60,7 @@ Once configured, reCAPTCHA verification should work on all login attempts.
 
 ### Content security headers
 
-If your site has a content security policy, including if you use the [Apostrophe Security Headers](https://www.npmjs.com/package/@apostrophecms/security-headers) module, you will need to add additional configuration to use this module. This module adds a script tag to the site's `head` tag fetching reCAPTCHA code. That reCAPTCHA code also constructs an iframe. Both the external script and iframe use the `www.google.com` domain root, so we need to allow resources from that domain.
+If your site has a content security policy, including if you use the [Apostrophe Security Headers](https://www.npmjs.com/package/@apostrophecms/security-headers) module, you will need to add additional configuration to use this module. This module adds a script tag to the site's `head` tag fetching reCAPTCHA code. That reCAPTCHA code also constructs an iframe. The external script and iframe use the `www.google.com` and `www.gstatic.com` domains, so we need to allow resources from that domain.
 
 **If you are using the Apostrophe Security Headers module**, add the following policy configuration for that module:
 
@@ -69,7 +69,7 @@ module.exports = {
   options: {
     policies: {
       'login-recaptcha': {
-        'script-src': 'www.google.com',
+        'script-src': 'www.google.com www.gstatic.com',
         'frame-src': 'www.google.com'
       },
       // Any other policies...
@@ -78,4 +78,4 @@ module.exports = {
 };
 ```
 
-**If your content security policy is configured some other way**, add `www.google.com` to the `frame-src` and `script-src` directives.
+**If your content security policy is configured some other way**, add `www.google.com` to the `frame-src` directive and  `www.google.com www.gstatic.com` to the `script-src` directive.
