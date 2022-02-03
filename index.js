@@ -19,12 +19,13 @@ module.exports = {
               sitekey: self.options.recaptcha.site
             };
           },
-          async verify(req) {
-            if (!req.body.requirements.AposRecaptcha) {
+          async verify(req, data) {
+            console.info('☘️', data);
+            if (!data) {
               throw self.apos.error('invalid', req.t('AposRecap:missingConfig'));
             }
 
-            await self.checkRecaptcha(req, req.body.requirements.AposRecaptcha);
+            await self.checkRecaptcha(req, data);
           }
         }
       }
