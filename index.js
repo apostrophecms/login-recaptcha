@@ -20,7 +20,6 @@ module.exports = {
             };
           },
           async verify(req, data) {
-            console.info('☘️', data);
             if (!data) {
               throw self.apos.error('invalid', req.t('AposRecap:missingConfig'));
             }
