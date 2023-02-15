@@ -1,6 +1,6 @@
 {
   "name": "@apostrophecms/login-recaptcha",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": " Adds reCAPTCHA v3 to Apostrophe login pages",
   "main": "index.js",
   "scripts": {
