@@ -1,7 +1,7 @@
 const assert = require('assert');
 const testUtil = require('apostrophe/test-lib/test');
 
-describe('Forms module', function () {
+describe('reCpatcha module', function () {
   let apos;
 
   this.timeout(25000);
