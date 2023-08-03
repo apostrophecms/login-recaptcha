@@ -134,6 +134,12 @@ describe('Forms module', function () {
 
     assert(page.match(/logged out/));
 
+    // intecept the logger
+    let savedArgs = [];
+    apos.login.logInfo = (...args) => {
+      savedArgs = args;
+    };
+
     await apos.http.post(
       '/api/v1/@apostrophecms/login/login',
       {
@@ -151,8 +157,47 @@ describe('Forms module', function () {
       }
     );
 
+    assert.equal(savedArgs[0], 'recaptcha-complete');
+    assert(savedArgs[1].ip);
+    console.log(savedArgs[1]);
+
     page = await apos.http.get('/', { jar });
 
     assert(page.match(/logged in/));
+  });
+
+  it('should log bad token request', async function () {
+    // intercept http
+    const post = apos.http.post;
+    apos.http.post = async function () {
+      return {
+        success: false,
+        foo: 'bar'
+      };
+    };
+
+    // intecept the logger
+    let savedArgs = [];
+    apos.login.logInfo = (...args) => {
+      savedArgs = args;
+    };
+
+    try {
+      await apos.login.checkRecaptcha(apos.task.getReq({
+        ip: '1.1.1.1'
+      }), 'invalid-token');
+    } catch (e) {
+      //
+    }
+    assert.equal(savedArgs[0], 'recaptcha-invalid-token');
+    assert.deepEqual(savedArgs[1], {
+      ip: '1.1.1.1',
+      data: {
+        success: false,
+        foo: 'bar'
+      }
+    });
+
+    apos.http.post = post;
   });
 });
