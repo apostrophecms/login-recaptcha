@@ -5,7 +5,7 @@ name: tests
 # Controls when the action will run.
 on:
   push:
-    branches: ["*"]
+    branches: ["main"]
   pull_request:
     branches: ["*"]
 
