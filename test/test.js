@@ -157,9 +157,9 @@ describe('reCpatcha module', function () {
       }
     );
 
-    assert.equal(savedArgs[0], 'recaptcha-complete');
-    assert(savedArgs[1].ip);
-    console.log(savedArgs[1]);
+    // the fancy way to detec `req`
+    assert.equal(typeof savedArgs[0].t, 'function');
+    assert.equal(savedArgs[1], 'recaptcha-complete');
 
     page = await apos.http.get('/', { jar });
 
@@ -189,9 +189,10 @@ describe('reCpatcha module', function () {
     } catch (e) {
       //
     }
-    assert.equal(savedArgs[0], 'recaptcha-invalid-token');
-    assert.deepEqual(savedArgs[1], {
-      ip: '1.1.1.1',
+    // the fancy way to detec `req`
+    assert.equal(typeof savedArgs[0].t, 'function');
+    assert.equal(savedArgs[1], 'recaptcha-invalid-token');
+    assert.deepEqual(savedArgs[2], {
       data: {
         success: false,
         foo: 'bar'
