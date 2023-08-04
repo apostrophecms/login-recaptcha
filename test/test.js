@@ -157,7 +157,7 @@ describe('reCpatcha module', function () {
       }
     );
 
-    // the fancy way to detec `req`
+    // the fancy way to detect `req`
     assert.equal(typeof savedArgs[0].t, 'function');
     assert.equal(savedArgs[1], 'recaptcha-complete');
 
@@ -189,7 +189,7 @@ describe('reCpatcha module', function () {
     } catch (e) {
       //
     }
-    // the fancy way to detec `req`
+    // the fancy way to detect `req`
     assert.equal(typeof savedArgs[0].t, 'function');
     assert.equal(savedArgs[1], 'recaptcha-invalid-token');
     assert.deepEqual(savedArgs[2], {
