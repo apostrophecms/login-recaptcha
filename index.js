@@ -46,8 +46,12 @@ module.exports = {
           const response = await self.apos.http.post(recaptchaUri);
 
           if (!response.success) {
+            self.logInfo(req, 'recaptcha-invalid-token', {
+              data: response
+            });
             throw self.apos.error('invalid', req.t('AposRecap:invalidToken'));
           }
+          self.logInfo(req, 'recaptcha-complete');
         } catch (e) {
           self.apos.util.error(e);
           throw self.apos.error('error', req.t('AposRecap:recaptchaErr'));

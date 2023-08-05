@@ -1,7 +1,7 @@
 const assert = require('assert');
 const testUtil = require('apostrophe/test-lib/test');
 
-describe('Forms module', function () {
+describe('reCpatcha module', function () {
   let apos;
 
   this.timeout(25000);
@@ -134,6 +134,12 @@ describe('Forms module', function () {
 
     assert(page.match(/logged out/));
 
+    // intecept the logger
+    let savedArgs = [];
+    apos.login.logInfo = (...args) => {
+      savedArgs = args;
+    };
+
     await apos.http.post(
       '/api/v1/@apostrophecms/login/login',
       {
@@ -151,8 +157,48 @@ describe('Forms module', function () {
       }
     );
 
+    // the fancy way to detect `req`
+    assert.equal(typeof savedArgs[0].t, 'function');
+    assert.equal(savedArgs[1], 'recaptcha-complete');
+
     page = await apos.http.get('/', { jar });
 
     assert(page.match(/logged in/));
+  });
+
+  it('should log bad token request', async function () {
+    // intercept http
+    const post = apos.http.post;
+    apos.http.post = async function () {
+      return {
+        success: false,
+        foo: 'bar'
+      };
+    };
+
+    // intecept the logger
+    let savedArgs = [];
+    apos.login.logInfo = (...args) => {
+      savedArgs = args;
+    };
+
+    try {
+      await apos.login.checkRecaptcha(apos.task.getReq({
+        ip: '1.1.1.1'
+      }), 'invalid-token');
+    } catch (e) {
+      //
+    }
+    // the fancy way to detect `req`
+    assert.equal(typeof savedArgs[0].t, 'function');
+    assert.equal(savedArgs[1], 'recaptcha-invalid-token');
+    assert.deepEqual(savedArgs[2], {
+      data: {
+        success: false,
+        foo: 'bar'
+      }
+    });
+
+    apos.http.post = post;
   });
 });
