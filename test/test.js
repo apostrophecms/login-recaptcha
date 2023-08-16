@@ -137,7 +137,10 @@ describe('reCpatcha module', function () {
     // intecept the logger
     let savedArgs = [];
     apos.login.logInfo = (...args) => {
-      savedArgs = args;
+      if (args[1] === 'recaptcha-complete') {
+        // Do not get confused by unrelated events
+        savedArgs = args;
+      }
     };
 
     await apos.http.post(
