@@ -21,15 +21,19 @@ export default {
       this.addScript();
     }
 
-    this.executeRecaptcha();
+    grecaptcha.ready(() => {
+      this.$emit('done', this.token);
+      apos.bus.$on('@apostrophecms/login:before-submit', this.getToken);
+    });
+  },
+  destroyed() {
+    apos.bus.$off('@apostrophecms/login:before-submit', this.getToken);
   },
   watch: {
     token(newVal) {
-      if (newVal) {
-        this.$emit('done', this.token);
-      } else {
-        this.$emit('block');
-      }
+      newVal
+        ? this.$emit('done', this.token)
+        : this.$emit('block');
     }
   },
   methods: {
@@ -40,21 +44,8 @@ export default {
 
       document.head.appendChild(scriptElem);
     },
-    executeRecaptcha() {
-      if (!window.grecaptcha) {
-        setTimeout(this.executeRecaptcha, 100);
-        return;
-      }
-
-      const self = this;
-
-      grecaptcha.ready(() => {
-        // Uses the `.then` syntax to use the .ready() method.
-        grecaptcha.execute(this.sitekey, {action: 'submit'})
-        .then(function(token) {
-          self.token = token;
-        });
-      });
+    async getToken() {
+      this.token = await grecaptcha.execute(this.sitekey, {action: 'submit'});
     }
   }
 };
