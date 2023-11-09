@@ -13,7 +13,7 @@ module.exports = {
     return {
       add: {
         AposRecaptcha: {
-          phase: 'beforeSubmit',
+          phase: 'uponSubmit',
           async props(req) {
             return {
               sitekey: self.options.recaptcha.site

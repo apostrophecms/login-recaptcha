@@ -16,18 +16,12 @@ export default {
       return 'https://www.google.com/recaptcha/api.js?render=' + this.sitekey;
     }
   },
-  mounted(){
+  mounted() {
     if (!window.grecaptcha) {
       this.addScript();
     }
 
-    grecaptcha.ready(() => {
-      this.$emit('done', this.token);
-      apos.bus.$on('@apostrophecms/login:before-submit', this.getToken);
-    });
-  },
-  destroyed() {
-    apos.bus.$off('@apostrophecms/login:before-submit', this.getToken);
+    this.executeRecaptcha();
   },
   watch: {
     token(newVal) {
@@ -44,8 +38,15 @@ export default {
 
       document.head.appendChild(scriptElem);
     },
-    async getToken() {
-      this.token = await grecaptcha.execute(this.sitekey, {action: 'submit'});
+    executeRecaptcha() {
+      if (!window.grecaptcha) {
+        setTimeout(this.executeRecaptcha, 100);
+        return;
+      }
+
+      grecaptcha.ready(async () => {
+        this.token = await grecaptcha.execute(this.sitekey, {action: 'submit'});
+      });
     }
   }
 };
