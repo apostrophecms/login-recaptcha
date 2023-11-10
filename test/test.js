@@ -77,7 +77,7 @@ describe('reCpatcha module', function () {
     assert(doc._id);
   });
 
-  it('should not be able to login a user without meeting the beforeSubmit requirement', async function() {
+  it('should not be able to login a user without meeting the uponSubmit requirement', async function() {
 
     const jar = apos.http.jar();
 
