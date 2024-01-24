@@ -117,6 +117,25 @@ describe.only('@apostrophecms/login-recaptcha', function () {
 
       assert.equal(context.requirementProps.AposRecaptcha.sitekey, siteConfig.site);
 
+      const post = apos.http.post;
+      try {
+        // intercept http
+        apos.http.post = async function () {
+          return {
+            success: false
+          };
+        };
+        await apos.login.checkRecaptcha(
+          apos.task.getReq({
+            ip: '1.1.1.1'
+          })
+        );
+      } catch (error) {
+        throw error;
+      } finally {
+        apos.http.post = post;
+      }
+
       await apos.http.post(
         '/api/v1/@apostrophecms/login/login',
         {
@@ -131,16 +150,8 @@ describe.only('@apostrophecms/login-recaptcha', function () {
       );
     };
     const expected = {
-      name: 'Error',
-      message: 'HTTP error 400',
-      status: 400,
-      body: {
-        message: 'The reCaptcha token was missing while verifying login.',
-        name: 'invalid',
-        data: {
-          requirement: 'AposRecaptcha'
-        }
-      }
+      message: 'The reCAPTCHA verification system may be down or incorrectly configured. Please try again or notify the site owner.',
+      name: 'error'
     };
 
     await assert.rejects(actual, expected);
@@ -169,16 +180,12 @@ describe.only('@apostrophecms/login-recaptcha', function () {
       }
     };
 
-    try {
-      await apos.login.checkRecaptcha(
-        apos.task.getReq({
-          ip: '1.1.1.1'
-        }),
-        'valid-token'
-      );
-    } catch (e) {
-      //
-    }
+    await apos.login.checkRecaptcha(
+      apos.task.getReq({
+        ip: '1.1.1.1'
+      }),
+      'valid-token'
+    );
 
     await apos.http.post(
       '/api/v1/@apostrophecms/login/login',
@@ -207,39 +214,41 @@ describe.only('@apostrophecms/login-recaptcha', function () {
   it('should log bad token request', async function () {
     // intercept http
     const post = apos.http.post;
-    apos.http.post = async function () {
-      return {
-        success: false,
-        foo: 'bar'
-      };
-    };
-
-    // intecept the logger
-    let savedArgs = [];
-    apos.login.logInfo = (...args) => {
-      savedArgs = args;
-    };
-
     try {
-      await apos.login.checkRecaptcha(
-        apos.task.getReq({
-          ip: '1.1.1.1'
-        }),
-        'invalid-token'
-      );
-    } catch (e) {
-      //
-    }
-    // the fancy way to detect `req`
-    assert.equal(typeof savedArgs[0].t, 'function');
-    assert.equal(savedArgs[1], 'recaptcha-invalid-token');
-    assert.deepEqual(savedArgs[2], {
-      data: {
-        success: false,
-        foo: 'bar'
-      }
-    });
+      apos.http.post = async function () {
+        return {
+          success: false,
+          foo: 'bar'
+        };
+      };
 
-    apos.http.post = post;
+      // intecept the logger
+      let savedArgs = [];
+      apos.login.logInfo = (...args) => {
+        savedArgs = args;
+      };
+
+      try {
+        await apos.login.checkRecaptcha(
+          apos.task.getReq({
+            ip: '1.1.1.1'
+          }),
+          'invalid-token'
+        );
+      } catch (e) {
+        //
+      }
+      // the fancy way to detect `req`
+      assert.equal(typeof savedArgs[0].t, 'function');
+      assert.equal(savedArgs[1], 'recaptcha-invalid-token');
+      assert.deepEqual(savedArgs[2], {
+        data: {
+          success: false,
+          foo: 'bar'
+        }
+      });
+    } finally {
+      apos.http.post = post;
+    }
   });
 });
