@@ -78,7 +78,7 @@ describe.only('@apostrophecms/login-recaptcha', function () {
     assert.equal(actual, expected);
   });
 
-    it('should be able to insert test user', async function () {
+  it('should be able to insert test user', async function () {
     const mary = getUserConfig();
 
     const user = apos.user.newInstance();
@@ -130,8 +130,6 @@ describe.only('@apostrophecms/login-recaptcha', function () {
             ip: '1.1.1.1'
           })
         );
-      } catch (error) {
-        throw error;
       } finally {
         apos.http.post = post;
       }
