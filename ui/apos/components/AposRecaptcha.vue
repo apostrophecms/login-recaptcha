@@ -16,7 +16,7 @@ export default {
       return 'https://www.google.com/recaptcha/api.js?render=' + this.sitekey;
     }
   },
-  mounted(){
+  mounted() {
     if (!window.grecaptcha) {
       this.addScript();
     }
@@ -25,11 +25,9 @@ export default {
   },
   watch: {
     token(newVal) {
-      if (newVal) {
-        this.$emit('done', this.token);
-      } else {
-        this.$emit('block');
-      }
+      newVal
+        ? this.$emit('done', this.token)
+        : this.$emit('block');
     }
   },
   methods: {
@@ -46,14 +44,8 @@ export default {
         return;
       }
 
-      const self = this;
-
-      grecaptcha.ready(() => {
-        // Uses the `.then` syntax to use the .ready() method.
-        grecaptcha.execute(this.sitekey, {action: 'submit'})
-        .then(function(token) {
-          self.token = token;
-        });
+      grecaptcha.ready(async () => {
+        this.token = await grecaptcha.execute(this.sitekey, {action: 'submit'});
       });
     }
   }

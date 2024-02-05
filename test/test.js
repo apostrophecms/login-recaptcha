@@ -1,72 +1,87 @@
 const assert = require('assert');
 const testUtil = require('apostrophe/test-lib/test');
 
-describe('reCpatcha module', function () {
+const getSiteConfig = function () {
+  return {
+    // reCAPTCHA test keys
+    // https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha-what-should-i-do
+    site: '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI',
+    secret: '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe',
+    // The reCAPTCHA test keys accept any token value.
+    response: 'valid-token'
+  };
+};
+
+const getAppConfig = function (siteConfig = getSiteConfig()) {
+  return {
+    '@apostrophecms/express': {
+      options: {
+        port: 4242,
+        // csrf: {
+        //   exceptions: [ '/api/v1/@apostrophecms/form/submit' ]
+        // },
+        session: {
+          secret: 'test-this-module'
+        },
+        apiKeys: {
+          skeleton_key: { role: 'admin' }
+        }
+      }
+    },
+    '@apostrophecms/login-recaptcha': {
+      options: {
+        testOption: 'surprise'
+      }
+    },
+    '@apostrophecms/login': {
+      options: {
+        recaptcha: {
+          site: siteConfig.site,
+          secret: siteConfig.secret
+        }
+      }
+    }
+  };
+};
+
+const getUserConfig = function () {
+  return {
+    username: 'marygold',
+    pw: 'asdfjkl;'
+  };
+};
+
+describe.only('@apostrophecms/login-recaptcha', function () {
   let apos;
 
   this.timeout(25000);
 
-  after(async function () {
-    testUtil.destroy(apos);
-  });
-
-  const siteConfig = {
-    // reCAPTCHA test keys
-    // https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha-what-should-i-do
-    site: '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI',
-    secret: '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'
-  };
-
-  // Improving
-  it('should improve the login module', async function () {
+  before(async function () {
     apos = await testUtil.create({
       shortname: 'loginTest',
       testModule: true,
-      modules: {
-        '@apostrophecms/express': {
-          options: {
-            port: 4242,
-            // csrf: {
-            //   exceptions: [ '/api/v1/@apostrophecms/form/submit' ]
-            // },
-            session: {
-              secret: 'test-this-module'
-            },
-            apiKeys: {
-              skeleton_key: { role: 'admin' }
-            }
-          }
-        },
-        '@apostrophecms/login-recaptcha': {
-          options: {
-            testOption: 'suprise'
-          }
-        },
-        '@apostrophecms/login': {
-          options: {
-            recaptcha: {
-              site: siteConfig.site,
-              secret: siteConfig.secret
-            }
-          }
-        }
-      }
+      modules: getAppConfig()
     });
-
-    const login = apos.modules['@apostrophecms/login'];
-    assert(login.options.testOption === 'suprise');
   });
 
-  const mary = {
-    username: 'marygold',
-    pw: 'asdfjkl;'
-  };
+  after(async function () {
+    await testUtil.destroy(apos);
+  });
 
-  it('should be able to insert test user', async function() {
-    assert(apos.user.newInstance);
+  // Improving
+  it('should improve the login module', function () {
+    const login = apos.modules['@apostrophecms/login'];
+
+    const actual = login.options.testOption;
+    const expected = 'surprise';
+
+    assert.equal(actual, expected);
+  });
+
+  it('should be able to insert test user', async function () {
+    const mary = getUserConfig();
+
     const user = apos.user.newInstance();
-    assert(user);
-
     user.title = 'Mary Gold';
     user.username = mary.username;
     user.password = mary.pw;
@@ -74,32 +89,51 @@ describe('reCpatcha module', function () {
     user.role = 'editor';
 
     const doc = await apos.user.insert(apos.task.getReq(), user);
-    assert(doc._id);
+
+    const actual = !!doc._id;
+    const expected = true;
+
+    assert.equal(actual, expected);
   });
 
-  it('should not be able to login a user without meeting the beforeSubmit requirement', async function() {
-
+  it('should not be able to login a user without meeting the uponSubmit requirement', async function () {
     const jar = apos.http.jar();
+    const siteConfig = getSiteConfig();
+    const mary = getUserConfig();
 
-    // establish session
-    let page = await apos.http.get('/', { jar });
+    const actual = async function () {
+      // establish session
+      const page = await apos.http.get('/', { jar });
+      assert.ok(page.match(/logged out/), 'page contains logged out in body');
 
-    assert(page.match(/logged out/));
+      const context = await apos.http.post(
+        '/api/v1/@apostrophecms/login/context',
+        {
+          method: 'POST',
+          body: {},
+          jar
+        }
+      );
 
-    const context = await apos.http.post(
-      '/api/v1/@apostrophecms/login/context',
-      {
-        method: 'POST',
-        body: {},
-        jar
+      assert.equal(context.requirementProps.AposRecaptcha.sitekey, siteConfig.site);
+
+      const post = apos.http.post;
+      try {
+        // intercept http
+        apos.http.post = async function () {
+          return {
+            success: false
+          };
+        };
+        await apos.login.checkRecaptcha(
+          apos.task.getReq({
+            ip: '1.1.1.1'
+          })
+        );
+      } finally {
+        apos.http.post = post;
       }
-    );
 
-    assert(context.requirementProps);
-    assert(context.requirementProps.AposRecaptcha);
-    assert.strictEqual(context.requirementProps.AposRecaptcha.sitekey, siteConfig.site);
-
-    try {
       await apos.http.post(
         '/api/v1/@apostrophecms/login/login',
         {
@@ -112,27 +146,28 @@ describe('reCpatcha module', function () {
           jar
         }
       );
-      assert(false);
-    } catch (e) {
-      assert(e.status === 400);
-      assert.strictEqual(e.body.message, 'The reCAPTCHA token was missing while verifying login.');
-      assert.strictEqual(e.body.data.requirement, 'AposRecaptcha');
-    }
+    };
+    const expected = {
+      message: 'The reCAPTCHA verification system may be down or incorrectly configured. Please try again or notify the site owner.',
+      name: 'error'
+    };
+
+    await assert.rejects(actual, expected);
 
     // Make sure it really didn't work
-    page = await apos.http.get('/', { jar });
-
-    assert(page.match(/logged out/));
+    const page = await apos.http.get('/', { jar });
+    assert.ok(page.match(/logged out/), 'page contains logged out in body');
   });
 
-  it('should log in with a recaptcha token', async function() {
+  it('should log in with a recaptcha token', async function () {
+    const mary = getUserConfig();
+    const siteConfig = getSiteConfig();
 
     const jar = apos.http.jar();
 
     // establish session
     let page = await apos.http.get('/', { jar });
-
-    assert(page.match(/logged out/));
+    assert.ok(page.match(/logged out/), 'page contains logged out in body');
 
     // intecept the logger
     let savedArgs = [];
@@ -143,6 +178,13 @@ describe('reCpatcha module', function () {
       }
     };
 
+    await apos.login.checkRecaptcha(
+      apos.task.getReq({
+        ip: '1.1.1.1'
+      }),
+      'valid-token'
+    );
+
     await apos.http.post(
       '/api/v1/@apostrophecms/login/login',
       {
@@ -152,8 +194,7 @@ describe('reCpatcha module', function () {
           password: mary.pw,
           session: true,
           requirements: {
-            // The reCAPTCHA test keys accept any token value.
-            AposRecaptcha: 'valid-token'
+            AposRecaptcha: siteConfig.response
           }
         },
         jar
@@ -165,43 +206,47 @@ describe('reCpatcha module', function () {
     assert.equal(savedArgs[1], 'recaptcha-complete');
 
     page = await apos.http.get('/', { jar });
-
-    assert(page.match(/logged in/));
+    assert.ok(page.match(/logged in/), 'page contains logged in in body');
   });
 
   it('should log bad token request', async function () {
     // intercept http
     const post = apos.http.post;
-    apos.http.post = async function () {
-      return {
-        success: false,
-        foo: 'bar'
-      };
-    };
-
-    // intecept the logger
-    let savedArgs = [];
-    apos.login.logInfo = (...args) => {
-      savedArgs = args;
-    };
-
     try {
-      await apos.login.checkRecaptcha(apos.task.getReq({
-        ip: '1.1.1.1'
-      }), 'invalid-token');
-    } catch (e) {
-      //
-    }
-    // the fancy way to detect `req`
-    assert.equal(typeof savedArgs[0].t, 'function');
-    assert.equal(savedArgs[1], 'recaptcha-invalid-token');
-    assert.deepEqual(savedArgs[2], {
-      data: {
-        success: false,
-        foo: 'bar'
-      }
-    });
+      apos.http.post = async function () {
+        return {
+          success: false,
+          foo: 'bar'
+        };
+      };
 
-    apos.http.post = post;
+      // intecept the logger
+      let savedArgs = [];
+      apos.login.logInfo = (...args) => {
+        savedArgs = args;
+      };
+
+      try {
+        await apos.login.checkRecaptcha(
+          apos.task.getReq({
+            ip: '1.1.1.1'
+          }),
+          'invalid-token'
+        );
+      } catch (e) {
+        //
+      }
+      // the fancy way to detect `req`
+      assert.equal(typeof savedArgs[0].t, 'function');
+      assert.equal(savedArgs[1], 'recaptcha-invalid-token');
+      assert.deepEqual(savedArgs[2], {
+        data: {
+          success: false,
+          foo: 'bar'
+        }
+      });
+    } finally {
+      apos.http.post = post;
+    }
   });
 });
