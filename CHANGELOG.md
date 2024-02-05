@@ -1,5 +1,11 @@
 # Changelog
 
+## UNRELEASED
+
+### Changes
+
+- Switch from `beforeSubmit` phase to the new `uponSubmit` phase.
+
 ## 1.1.0 - 2023-08-16
 
 ### Adds
