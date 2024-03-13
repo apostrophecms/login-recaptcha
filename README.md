@@ -4,7 +4,7 @@
   <h1>Apostrophe reCAPTCHA Login Verification</h1>
   <p>
     <a aria-label="Apostrophe logo" href="https://v3.docs.apostrophecms.org">
-      <img src="https://img.shields.io/badge/MADE%20FOR%20Apostrophe%203-000000.svg?style=for-the-badge&logo=Apostrophe&labelColor=6516dd">
+      <img src="https://img.shields.io/badge/MADE%20FOR%20ApostropheCMS-000000.svg?style=for-the-badge&logo=Apostrophe&labelColor=6516dd">
     </a>
     <a aria-label="Test status" href="https://github.com/apostrophecms/login-recaptcha/actions">
       <img alt="GitHub Workflow Status (branch)" src="https://img.shields.io/github/workflow/status/apostrophecms/login-recaptcha/Tests/main?label=Tests&labelColor=000000&style=for-the-badge">
